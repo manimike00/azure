@@ -25,15 +25,15 @@
 ```                                     
 
 ## Configuration Arguments
-
->    --registry-login-server        : The url of the registry, e.g. myregistry.azurecr.io.
->    --registry-password            : The password to log in container image registry server.
->    --registry-username            : The username to log in container image registry server.
->    --revisions-mode               : The active revisions mode for the containerapp.  Allowed
->                                     values: multiple, single.
->    --secrets -s                   : A list of secret(s) for the containerapp. Comma-separated
->                                     values in 'key=value' format.
-
+```
+    --registry-login-server        : The url of the registry, e.g. myregistry.azurecr.io.
+    --registry-password            : The password to log in container image registry server.
+    --registry-username            : The username to log in container image registry server.
+    --revisions-mode               : The active revisions mode for the containerapp.  Allowed
+                                     values: multiple, single.
+    --secrets -s                   : A list of secret(s) for the containerapp. Comma-separated
+                                     values in 'key=value' format.
+```
 
 ## Container Arguments
 ```
