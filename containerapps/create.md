@@ -1,8 +1,10 @@
 
 Command
     az containerapp create : Create a Containerapp.
-        WARNING: Command group 'containerapp' is in preview and under development. Reference and
-        support levels: https://aka.ms/CLI_refstatus
+
+```WARNING: Command group 'containerapp' is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+```
+
 Arguments
     --name -n           [Required]
     --resource-group -g [Required] : Name of resource group. You can configure the default group
@@ -130,4 +132,3 @@ Examples
 
 
 To search AI knowledge base for examples, use: az find "az containerapp create"
-
