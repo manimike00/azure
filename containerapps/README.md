@@ -12,7 +12,7 @@
 
 ## Group
 ```
-    az containerapp : Commands to manage Containerapps.
+  az containerapp : Commands to manage Containerapps.
 ```		
 #### WARNING: This command group is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
 
@@ -32,4 +32,4 @@
     show          : Show details of a Containerapp.
     update        : Update a Containerapp.
 ```
-# To search AI knowledge base for examples, use: az find "az containerapp"
+#### To search AI knowledge base for examples, use: az find "az containerapp"
