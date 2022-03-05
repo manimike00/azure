@@ -24,7 +24,8 @@
                                      All other parameters will be ignored.
 ```                                     
 
-Configuration Arguments
+## Configuration Arguments
+```
     --registry-login-server        : The url of the registry, e.g. myregistry.azurecr.io.
     --registry-password            : The password to log in container image registry server.
     --registry-username            : The username to log in container image registry server.
@@ -32,8 +33,10 @@ Configuration Arguments
                                      values: multiple, single.
     --secrets -s                   : A list of secret(s) for the containerapp. Comma-separated
                                      values in 'key=value' format.
+```
 
-Container Arguments
+## Container Arguments
+```
     --args                         : A list of container startup command argument(s). Comma-
                                      separated values e.g. '-c, mycommand'. If there are multiple
                                      containers, please use --yaml instead.
@@ -48,26 +51,34 @@ Container Arguments
     --image -i                     : Container image, e.g. publisher/image-name:tag. If there are
                                      multiple containers, please use --yaml instead.
     --memory                       : Required memory, e.g. 250Mi.
+```    
 
-Dapr Arguments
+## Dapr Arguments
+```
     --dapr-app-id                  : The dapr app id.
     --dapr-app-port                : The port of your app.
     --dapr-components              : The name of a yaml file containing a list of dapr components.
     --enable-dapr                  : Allowed values: false, true.
+```    
 
-Ingress Arguments
+## Ingress Arguments
+```
     --ingress                      : Ingress type that allows either internal or external+internal
                                      ingress traffic to the Containerapp.  Allowed values: external,
                                      internal.
     --transport                    : The transport protocol used for ingress traffic.  Allowed
                                      values: auto, http, http2.  Default: auto.
+```                                     
 
-Scale Arguments
+## Scale Arguments
+```
     --max-replicas                 : The maximum number of containerapp replicas.
     --min-replicas                 : The minimum number of containerapp replicas.
     --scale-rules                  : The name of a yaml file containing a list of scale rules.
+```    
 
-Global Arguments
+## Global Arguments
+```
     --debug                        : Increase logging verbosity to show all debug logs.
     --help -h                      : Show this help message and exit.
     --only-show-errors             : Only show errors, suppressing warnings.
@@ -78,8 +89,10 @@ Global Arguments
     --subscription                 : Name or ID of subscription. You can configure the default
                                      subscription using `az account set -s NAME_OR_ID`.
     --verbose                      : Increase logging verbosity. Use --debug for full debug logs.
+```
 
-Examples
+## Examples
+```
     Create a Containerapp
         az containerapp create -n MyContainerapp -g MyResourceGroup \
             --image MyContainerImage -e MyContainerappEnv
@@ -133,6 +146,6 @@ Examples
             --enable-dapr --dapr-app-port myAppPort \
             --dapr-app-id myAppID \
             --dapr-components PathToDaprComponentsFile
+```
 
-
-To search AI knowledge base for examples, use: az find "az containerapp create"
+# To search AI knowledge base for examples, use: az find "az containerapp create"
