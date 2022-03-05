@@ -1,10 +1,14 @@
 
-Command
+## Command
+```
     az containerapp create : Create a Containerapp.
+```    
 
-### WARNING: Command group 'containerapp' is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+### WARNING: Command group 'containerapp' is in preview and under development.
+### Reference and support levels: https://aka.ms/CLI_refstatus
 
-Arguments
+## Arguments
+```
     --name -n           [Required]
     --resource-group -g [Required] : Name of resource group. You can configure the default group
                                      using `az configure --defaults group=<name>`.
@@ -18,6 +22,7 @@ Arguments
     --target-port
     --yaml                         : Path to a .yaml file with the configuration of a containerapp.
                                      All other parameters will be ignored.
+```                                     
 
 Configuration Arguments
     --registry-login-server        : The url of the registry, e.g. myregistry.azurecr.io.
