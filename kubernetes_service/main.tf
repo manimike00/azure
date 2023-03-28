@@ -38,6 +38,6 @@ module "kubernetes_service" {
   default-np-size        = "Standard_B2s"
   local_account_disabled = false
   resource-grp           = module.resouce_group.resource-grp
-  vnet_subnet_id         = module.virtual_network.vnet-id
+  vnet_subnet_id         = module.default_np_subnet.subnets-id
 }
 

@@ -56,9 +56,9 @@ resource "azurerm_kubernetes_cluster" "aks" {
   #    client_secret = var.client_secret
   #  }
 
-  #  identity {
-  #    type = "SystemAssigned"
-  #  }
+    identity {
+      type = "SystemAssigned"
+    }
 
   tags = {
     name        = var.name
