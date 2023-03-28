@@ -5,8 +5,8 @@ variable "key_vault_id" {}
 variable "secret_maps" {
   type = map(string)
   default = {
-    "name1"= "value1"
-    "aaa" = "111"
-    "bbb" = "222"
+    "name1" = "value1"
+    "aaa"   = "111"
+    "bbb"   = "222"
   }
 }
