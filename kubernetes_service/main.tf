@@ -41,3 +41,14 @@ module "kubernetes_service" {
   vnet_subnet_id         = module.default_np_subnet.subnets-id
 }
 
+# create stoage account
+module "storage_account" {
+  source                   = "../modules/storage_account"
+  name                     = "${var.env}${var.name}${var.project}backup"
+  env                      = var.env
+  location                 = var.location
+  project                  = var.project
+  resource_group_name      = module.resouce_group.resource-grp
+  account_tier             = "Standard"
+  account_replication_type = "GRS"
+}
