@@ -52,3 +52,41 @@ module "storage_account" {
   account_tier             = "Standard"
   account_replication_type = "GRS"
 }
+
+# create storage container
+module "storage_container" {
+  source                = "../modules/storage_container"
+  name                  = "velero"
+  storage_account_name  = module.storage_account.storage_account
+  container_access_type = "private"
+}
+
+# create kubernetes secrets
+#module "velerosecret" {
+#  source = "../modules/kubernetes_resources/secrets"
+#  name = "velero"
+#  data = {
+#    HELLO=World
+#  }
+#  type = "Opaque"
+#}
+
+# deploy velero
+module "elasticSearch" {
+  source           = "../modules/helm_releases"
+  name             = "velero"
+  chart            = "velero"
+  create_namespace = true
+  namespace        = "velero"
+  repository       = "https://vmware-tanzu.github.io/helm-charts"
+  values = [
+    { name = "configuration.provider", value = "azure", type = "string" },
+    { name = "configuration.backupStorageLocation.name", value = "azure", type = "string" },
+    { name = "configuration.backupStorageLocation.bucket", value = module.storage_account.storage_account, type = "string" },
+    { name = "initContainers[0].name", value = "velero-plugin-for-csi", type = "string" },
+    { name = "initContainers[0].image", value = "velero/velero-plugin-for-csi:v0.2.0", type = "string" },
+    { name = "initContainers[0].imagePullPolicy", value = "IfNotPresent", type = "string" },
+    { name = "initContainers[0].volumeMounts[0].mountPath", value = "/target", type = "string" },
+    { name = "initContainers[0].volumeMounts[0].name", value = "plugins", type = "string" }
+  ]
+}

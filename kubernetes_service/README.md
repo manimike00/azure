@@ -40,3 +40,7 @@ terraform apply --auto-approve
 1. Terraform Statefiles is stored in local machine
 2. Dont commit terrraform.tfvars with service principle credentials
 ```
+
+
+## References
+[AKS best practice - backing up aks with velero](https://gaunacode.com/aks-best-practice-backing-up-aks-with-velero)
