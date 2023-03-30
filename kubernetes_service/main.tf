@@ -52,3 +52,47 @@ module "storage_account" {
   account_tier             = "Standard"
   account_replication_type = "GRS"
 }
+
+# create storage container
+module "storage_container" {
+  source                = "../modules/storage_container"
+  name                  = "velero"
+  storage_account_name  = module.storage_account.storage_account
+  container_access_type = "private"
+}
+
+locals {
+  azure_creds = <<EOF
+AZURE_SUBSCRIPTION_ID=${var.subscription_id}
+AZURE_TENANT_ID=${var.tenant_id}
+AZURE_CLIENT_ID=${var.client_id}
+AZURE_CLIENT_SECRET=${var.client_secret}
+AZURE_RESOURCE_GROUP=${module.resouce_group.resource-grp}
+AZURE_CLOUD_NAME=AzurePublicCloud
+EOF
+}
+
+# deploy velero
+module "velero" {
+  source           = "../modules/helm_releases"
+  name             = "velero"
+  chart            = "velero"
+  create_namespace = true
+  namespace        = "velero"
+  chart_version    = "3.1.3"
+  repository       = "https://vmware-tanzu.github.io/helm-charts"
+  values = [
+    { name = "initContainers[0].name", value = "velero-plugin-for-azure", type = "string" },
+    { name = "initContainers[0].image", value = "velero/velero-plugin-for-microsoft-azure:v1.5.0", type = "string" },
+    { name = "initContainers[0].imagePullPolicy", value = "IfNotPresent", type = "string" },
+    { name = "initContainers[0].volumeMounts[0].mountPath", value = "/target", type = "string" },
+    { name = "initContainers[0].volumeMounts[0].name", value = "plugins", type = "string" },
+    { name = "credentials.secretContents.cloud", value = local.azure_creds, type = "string" },
+    { name = "configuration.provider", value = "azure", type = "string" },
+    { name = "configuration.backupStorageLocation.bucket", value = module.storage_container.storage_container, type = "string" },
+    { name = "configuration.backupStorageLocation.config.resourceGroup", value = module.resouce_group.resource-grp, type = "string" },
+    { name = "configuration.backupStorageLocation.config.storageAccount", value = module.storage_account.storage_account, type = "string" },
+    { name = "configuration.backupStorageLocation.config.subscriptionId", value = var.subscription_id, type = "string" },
+    { name = "configuration.backupStorageLocation.default", value = "true", type = "string" }
+  ]
+}
