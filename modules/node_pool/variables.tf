@@ -9,3 +9,12 @@ variable "max_count" {}
 variable "min_count" {}
 variable "environment" {}
 variable "vnet_subnet_id" {}
+
+variable "use_spot" {
+  type = bool
+}
+
+variable "spot_max_price" {
+  type    = number
+  default = -1
+}

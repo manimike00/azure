@@ -13,3 +13,4 @@ variable "tenant_id" {}
 # virtual network
 variable "address_space" {}
 variable "address_prefixes_default_np" {}
+variable "address_prefixes_monitoring_np" {}
