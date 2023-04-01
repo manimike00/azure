@@ -9,6 +9,10 @@ resource "azurerm_kubernetes_cluster_node_pool" "nodepool" {
   enable_host_encryption = false
   fips_enabled           = false
   vnet_subnet_id         = var.vnet_subnet_id
+  priority               = var.use_spot == true ? "Spot" : "Regular"
+  eviction_policy        = var.use_spot == true ? "Delete" : null
+  spot_max_price         = var.use_spot == true ? var.spot_max_price : null
+
 
   node_labels = {
     Name = var.name
