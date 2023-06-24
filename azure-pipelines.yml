@@ -7,7 +7,7 @@ trigger:
 - main
 
 pool:
-  name: Default
+  name: k8s-ag-pool
   # vmImage: ubuntu-latest
 
 steps:
