@@ -7,7 +7,7 @@ trigger:
 - main
 
 pool:
-  name: k8s-ag-pool
+  name: fizota-k8s-agents
   # vmImage: ubuntu-latest
 
 steps:
