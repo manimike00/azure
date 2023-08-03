@@ -28,7 +28,7 @@ pool:
 
 steps:
 - script: |
-    echo "The devops Test - $(date)" > index.html
+    echo "The devops Test - Mani - $(date)" > index.html
     mkdir build
     mv index.html build
   displayName: 'install and build'
