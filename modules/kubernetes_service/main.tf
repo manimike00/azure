@@ -4,12 +4,23 @@ resource "azurerm_kubernetes_cluster" "aks" {
   resource_group_name = var.resource-grp
   dns_prefix          = var.name
 
+  private_cluster_enabled = var.private_cluster_enabled
+
+  azure_policy_enabled = var.azure_policy_enabled
+
+#  microsoft_defender {
+#    log_analytics_workspace_id = ""
+#  }
+
   network_profile {
     network_plugin = "azure"
     network_policy = "azure"
   }
 
   local_account_disabled = var.local_account_disabled
+
+  oidc_issuer_enabled = var.oidc_issuer_enabled
+  workload_identity_enabled = var.workload_identity_enabled
 
   #  role_based_access_control_enabled = true
   #
@@ -47,14 +58,14 @@ resource "azurerm_kubernetes_cluster" "aks" {
     }
   }
 
-  #  ingress_application_gateway {
-  #    gateway_id = var.gateway_id
-  #  }
+#    ingress_application_gateway {
+#      gateway_id = var.gateway_id
+#    }
 
-  #  service_principal {
-  #    client_id     = var.client_id
-  #    client_secret = var.client_secret
-  #  }
+#    service_principal {
+#      client_id     = var.client_id
+#      client_secret = var.client_secret
+#    }
 
     identity {
       type = "SystemAssigned"
@@ -68,7 +79,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
   }
 
   lifecycle {
-    ignore_changes = [tags]
+    ignore_changes = [tags,azure_policy_enabled]
   }
 
 }

@@ -36,10 +36,40 @@ output "aks_fqdn" {
   value = module.kubernetes_service.aks-fqdn
 }
 
-# backup storage account
-output "backup_storage_account" {
-  value = module.storage_account.storage_account
+output "aks-cluster_oidc_url" {
+  value = module.kubernetes_service.aks-cluster_oidc_url
 }
-output "backup_storage_account_id" {
-  value = module.storage_account.storage_account_id
+
+output "ingress_application_gateway" {
+  value = module.kubernetes_service.ingress_application_gateway
 }
+
+output "appgw_uid" {
+  value = module.uid.uai_id
+}
+
+output "appgw_client_id" {
+  value = module.uid.uai_client_id
+}
+
+## References
+#
+#output "client_id" {
+#  value = tolist([for item in module.kubernetes_service.ingress_application_gateway : item.ingress_application_gateway_identity[0].client_id])
+#}
+#
+#output "gateway_id" {
+#  value = tolist([for item in module.kubernetes_service.ingress_application_gateway : item.gateway_id])
+#}
+#
+#output "user_assigned_identity_id" {
+#  value = local.ingress_application_gateway_identity[0][0].user_assigned_identity_id
+#}
+#
+## backup storage account
+#output "backup_storage_account" {
+#  value = module.storage_account.storage_account
+#}
+#output "backup_storage_account_id" {
+#  value = module.storage_account.storage_account_id
+#}
