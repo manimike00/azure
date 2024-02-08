@@ -301,3 +301,22 @@ module "agic-ra-contributor" {
   role_definition_name = "Contributor"
   scope                = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${module.resouce_group.resource-grp}/providers/Microsoft.Network/applicationGateways/${module.appgw.appgw}"
 }
+
+# deploy open-cost
+module "agic" {
+  source           = "../modules/helm_releases"
+  name             = "agic"
+  chart            = "ingress-azure"
+  chart_version    = "1.7.2"
+  create_namespace = false
+  namespace        = "kube-system"
+  repository       = "https://appgwingress.blob.core.windows.net/ingress-azure-helm-package"
+  values = [
+    { name = "appgw.environment", value = "AZUREPUBLICCLOUD", type = "string" },
+    { name = "appgw.subscriptionId", value = data.azurerm_subscription.current.id, type = "string" },
+    { name = "appgw.resourceGroup", value = module.resouce_group.resource-grp, type = "string" },
+    { name = "appgw.name", value = module.appgw.appgw, type = "string" },
+    { name = "armAuth.type", value = "workloadIdentity", type = "string" },
+    { name = "armAuth.identityClientID", value = module.uid.uai_client_id, type = "string" }
+  ]
+}
