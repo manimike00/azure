@@ -1,0 +1,11 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-ingress-from-ip-range
+spec:
+  endpointSelector:
+    matchLabels:
+      app: nginx
+  ingress:
+  - fromCIDR:
+    - "0.0.0.0/0"

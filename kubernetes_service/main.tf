@@ -1,4 +1,4 @@
-# create reource group
+# create resource group
 module "resouce_group" {
   source   = "../modules/resource_group"
   name     = "${var.env}-${var.name}-${var.project}"
@@ -43,6 +43,8 @@ module "kubernetes_service" {
   oidc_issuer_enabled       = true
   workload_identity_enabled = true
   azure_policy_enabled      = false
+  network_plugin            = "azure"
+  network_policy            = "azure"
   #  gateway_id                = module.appgw.appgw-id
   #  client_id               = var.client_id
   #  client_secret           = var.client_secret
@@ -259,14 +261,24 @@ module "appgw" {
 }
 
 # user identity
-module "uid" {
+module "appgw_uid" {
   source              = "../modules/identity"
-  name                = "${var.env}-${var.name}-${var.project}"
+  name                = "${var.env}-${var.name}-${var.project}-appgw"
   env                 = var.env
   location            = var.location
   project             = var.project
   resource_group_name = module.resouce_group.resource-grp
 }
+
+## user identity
+#module "karpenter_uid" {
+#  source              = "../modules/identity"
+#  name                = "${var.env}-${var.name}-${var.project}-karpenter"
+#  env                 = var.env
+#  location            = var.location
+#  project             = var.project
+#  resource_group_name = module.resouce_group.resource-grp
+#}
 
 # federated credential
 module "fc" {
@@ -274,49 +286,73 @@ module "fc" {
   name                = "${var.env}-${var.name}-${var.project}"
   resource_group_name = module.resouce_group.resource-grp
 #  uid                 = local.ingress_application_gateway_identity[0][0].client_id
-  uid                 = module.uid.uai_id
+  uid                 = module.appgw_uid.uai_id
   audience            = "api://AzureADTokenExchange"
   issuer              = module.kubernetes_service.aks-cluster_oidc_url
-  subject             = "system:serviceaccount:kube-system:agic-sa-ingress-azure"
+  subject             = "system:serviceaccount:kube-system:core-k8s-tools-sa-ingress-azure"
 }
+
+## federated credential
+#module "fc" {
+#  source              = "../modules/federated_identity_credential"
+#  name                = "${var.env}-${var.name}-${var.project}-karpenter"
+#  resource_group_name = module.resouce_group.resource-grp
+#  uid                 = module.karpenter_uid.uai_id
+#  audience            = "api://AzureADTokenExchange"
+#  issuer              = module.kubernetes_service.aks-cluster_oidc_url
+#  subject             = "system:serviceaccount:kube-system:karpenter-sa"
+#}
 
 # Application Gateway Role Assignment
 module "agic-ra-read" {
   source               = "../modules/role_assignment"
-  principal_id         = module.uid.uai_principal_id
+  principal_id         = module.appgw_uid.uai_principal_id
   role_definition_name = "Reader"
   scope                = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${module.resouce_group.resource-grp}"
 }
 
 module "agic-ra-nw" {
   source               = "../modules/role_assignment"
-  principal_id         = module.uid.uai_principal_id
+  principal_id         = module.appgw_uid.uai_principal_id
   role_definition_name = "Network Contributor"
   scope                = module.virtual_network.vnet-id
 }
 
 module "agic-ra-contributor" {
   source               = "../modules/role_assignment"
-  principal_id         = module.uid.uai_principal_id
+  principal_id         = module.appgw_uid.uai_principal_id
   role_definition_name = "Contributor"
   scope                = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${module.resouce_group.resource-grp}/providers/Microsoft.Network/applicationGateways/${module.appgw.appgw}"
 }
 
-# deploy open-cost
-module "agic" {
-  source           = "../modules/helm_releases"
-  name             = "agic"
-  chart            = "ingress-azure"
-  chart_version    = "1.7.2"
-  create_namespace = false
-  namespace        = "kube-system"
-  repository       = "https://appgwingress.blob.core.windows.net/ingress-azure-helm-package"
-  values = [
-    { name = "appgw.environment", value = "AZUREPUBLICCLOUD", type = "string" },
-    { name = "appgw.subscriptionId", value = data.azurerm_subscription.current.id, type = "string" },
-    { name = "appgw.resourceGroup", value = module.resouce_group.resource-grp, type = "string" },
-    { name = "appgw.name", value = module.appgw.appgw, type = "string" },
-    { name = "armAuth.type", value = "workloadIdentity", type = "string" },
-    { name = "armAuth.identityClientID", value = module.uid.uai_client_id, type = "string" }
-  ]
-}
+#locals {
+#  roles = ["Virtual Machine Contributor","Network Contributor"]
+#}
+#
+#module "karpenter-ra-contributor" {
+#  count                = length(local.roles)
+#  source               = "../modules/role_assignment"
+#  principal_id         = module.karpenter_uid.uai_principal_id
+#  role_definition_name = local.roles[count.index]
+#  scope                = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${module.kubernetes_service.node_resource_group}"
+#}
+
+## deploy agic - agic-sa-ingress-azure
+#module "agic" {
+#  source           = "../modules/helm_releases"
+#  name             = "agic"
+#  chart            = "ingress-azure"
+#  chart_version    = "1.7.2"
+#  create_namespace = false
+#  namespace        = "kube-system"
+#  repository       = "https://appgwingress.blob.core.windows.net/ingress-azure-helm-package"
+#  values = [
+#    { name = "appgw.environment", value = "AZUREPUBLICCLOUD", type = "string" },
+#    { name = "appgw.subscriptionId", value = data.azurerm_subscription.current.id, type = "string" },
+#    { name = "appgw.resourceGroup", value = module.resouce_group.resource-grp, type = "string" },
+#    { name = "appgw.name", value = module.appgw.appgw, type = "string" },
+#    { name = "armAuth.type", value = "workloadIdentity", type = "string" },
+#    { name = "armAuth.identityClientID", value = module.uid.uai_client_id, type = "string" },
+#    { name = "rbac.enabled", value = "true", type = "string"}
+#  ]
+#}

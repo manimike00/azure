@@ -13,8 +13,11 @@ resource "azurerm_kubernetes_cluster" "aks" {
 #  }
 
   network_profile {
-    network_plugin = "azure"
-    network_policy = "azure"
+    network_plugin = var.network_plugin
+    network_policy = var.network_policy
+    ebpf_data_plane = var.network_policy == "cilium" ? "cilium" : null
+#    network_plugin_mode = "overlay"
+#    pod_cidr = "192.168.0.0/16"
   }
 
   local_account_disabled = var.local_account_disabled

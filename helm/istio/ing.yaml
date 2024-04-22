@@ -5,17 +5,16 @@ metadata:
     appgw.ingress.kubernetes.io/health-probe-status-codes: 200-599
     #appgw.ingress.kubernetes.io/use-private-ip: "true"
     kubernetes.io/ingress.class: azure/application-gateway
-  name: nginx
-  namespace: default
+  name: istio
+  namespace: istio-system
 spec:
   rules:
-    #- host: ikyc-qs.default.svc.cluster.local
     - http:
         paths:
           - backend:
               service:
-                name: nginx
+                name: istiod
                 port:
-                  number: 80
+                  number: 443
             path: /
             pathType: Prefix

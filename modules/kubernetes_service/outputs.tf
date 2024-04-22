@@ -33,3 +33,7 @@ output "aks-cluster_oidc_url" {
 output "ingress_application_gateway" {
   value = azurerm_kubernetes_cluster.aks.ingress_application_gateway
 }
+
+output "node_resource_group" {
+  value = azurerm_kubernetes_cluster.aks.node_resource_group
+}

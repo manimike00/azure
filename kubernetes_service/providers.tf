@@ -30,4 +30,7 @@ provider "helm" {
     client_key             = module.kubernetes_service.aks-client_key
     cluster_ca_certificate = module.kubernetes_service.aks-cluster_ca_certificate
   }
+#  kubernetes {
+#    config_path = "C:\\Users\\ManikandanS\\.kube\\config"
+#  }
 }

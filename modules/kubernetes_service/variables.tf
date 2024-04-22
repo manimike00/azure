@@ -48,3 +48,7 @@ variable "oidc_issuer_enabled" {
 variable "workload_identity_enabled" {
   type = bool
 }
+
+# network plugin
+variable "network_plugin" {}
+variable "network_policy" {}

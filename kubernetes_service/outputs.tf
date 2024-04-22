@@ -45,11 +45,11 @@ output "ingress_application_gateway" {
 }
 
 output "appgw_uid" {
-  value = module.uid.uai_id
+  value = module.appgw_uid.uai_id
 }
 
 output "appgw_client_id" {
-  value = module.uid.uai_client_id
+  value = module.appgw_uid.uai_client_id
 }
 
 ## References
