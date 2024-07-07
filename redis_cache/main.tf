@@ -62,3 +62,4 @@ module "redis_monitoring" {
   target_resource_id = module.redis_cache.redis_id
   storage_account_id = module.redis_logs_storage_account.storage_account_id
 }
+

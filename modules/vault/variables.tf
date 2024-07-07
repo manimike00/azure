@@ -14,3 +14,6 @@ variable "purge_protection_enabled" {
   default = false
 }
 variable "sku_name" {}
+variable "enable_rbac_authorization" {
+  default = true
+}
