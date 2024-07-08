@@ -13,5 +13,8 @@ variable "network_interface_ids" {}
 variable "size" {}
 variable "admin_username" {}
 variable "public_key" {}
-
+variable "identity" {}
+variable "identity_ids" {
+  default = null
+}
 

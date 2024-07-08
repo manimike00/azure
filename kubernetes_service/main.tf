@@ -104,6 +104,124 @@ module "kubernetes_service" {
   node_count                          = 1
 }
 
+
+module "public_subnet" {
+  source               = "../modules/subnets"
+  name                 = "${var.name}-${var.project}-public-subnet"
+  address_prefixes     = "10.100.49.0/24"
+  resource_group_name  = module.rg.resource-grp
+  virtual_network_name = module.vnet.vnet
+}
+
+# module public ip
+module "bastion_public_ip" {
+  source              = "../modules/public_ip"
+  name                = "${var.name}-${var.project}-bastion-ip"
+  env                 = var.env
+  location            = var.location
+  project             = var.project
+  resource_group_name = module.rg.resource-grp
+  allocation_method   = "Static"
+}
+module "nic" {
+  source               = "../modules/network_interface"
+  name                 = "${var.name}-${var.project}-bastion-ip"
+  env                  = var.env
+  location             = var.location
+  project              = var.project
+  public_ip_address_id = module.bastion_public_ip.public-id
+  resource_group_name  = module.rg.resource-grp
+  subnet_id            = module.public_subnet.subnets-id
+}
+
+module "bastion_network_sg" {
+  source              = "../modules/network_security_group"
+  name                = "${var.name}-${var.project}-bastion-sg"
+  env                 = var.env
+  location            = var.location
+  project             = var.project
+  resource_group_name = module.rg.resource-grp
+}
+
+locals {
+  ngrules = {
+    ssh = {
+      name                       = "ssh"
+      priority                   = 201
+      direction                  = "Inbound"
+      access                     = "Allow"
+      protocol                   = "Tcp"
+      source_port_range          = "*"
+      destination_port_range     = "22"
+      source_address_prefix      = "*"
+      destination_address_prefix = "*"
+    }
+  }
+}
+
+module "network_sg_rules" {
+  source                      = "../modules/network_security_group_rule"
+  for_each                    = local.ngrules
+  name                        = each.key
+  resource_group_name         = module.rg.resource-grp
+  direction                   = each.value.direction
+  access                      = each.value.access
+  priority                    = each.value.priority
+  protocol                    = each.value.protocol
+  source_port_range           = each.value.source_port_range
+  destination_port_range      = each.value.destination_port_range
+  source_address_prefix       = each.value.source_address_prefix
+  destination_address_prefix  = each.value.destination_address_prefix
+  network_security_group_name = module.bastion_network_sg.network_sg
+}
+
+module "bastion_nic_sg_bind" {
+  source                    = "../modules/nic_sg_association"
+  network_interface_id      = module.nic.nic_id
+  network_security_group_id = module.bastion_network_sg.network_sg_id
+}
+
+# user identity
+module "bastion_uid" {
+  source              = "../modules/identity"
+  name                = "${var.env}-${var.project}-bastion-uid"
+  env                 = var.env
+  location            = var.location
+  project             = var.project
+  resource_group_name = module.rg.resource-grp
+}
+
+# AKS Role Assignment
+module "bastion_vm_role" {
+  source               = "../modules/role_assignment"
+  principal_id         = module.bastion_uid.uai_principal_id
+  role_definition_name = "Owner"
+  scope                = module.rg.resource-id
+}
+
+#module "bastion_vm_role_aks" {
+#  source               = "../modules/role_assignment"
+#  principal_id         = module.bastion_uid.uai_principal_id
+#  role_definition_name = "Azure Kubernetes Service RBAC Cluster Admin"
+#  scope                = module.kubernetes_service.aks-id
+#}
+
+module "bastion" {
+  source                = "../modules/virtual_machine"
+  name                  = "${var.env}-${var.project}-bastion"
+  env                   = var.env
+  project               = var.project
+  location              = var.location
+  resource_group_name   = module.rg.resource-grp
+  admin_username        = "basadmin"
+  public_key            = ""
+  network_interface_ids = [module.nic.nic_id]
+  size                  = "Standard_B1ms"
+  identity              = "UserAssigned"
+  identity_ids          = [module.bastion_uid.uai_id]
+  custom_data           = file("${path.module}/customdata/data.sh")
+}
+
 ### create subnets nodepool
 ##module "nodepool_subnets" {
 ##  source               = "../modules/subnets"
@@ -451,28 +569,4 @@ locals {
 ##  namespace        = "monitoring"
 ##  repository       = "https://grafana.github.io/helm-charts"
 ##  values-yaml      = tolist([jsonencode(yamldecode(file("${path.module}/helm-values/loki-distributed.yaml")))])
-##}
-##
-### deploy promtail
-##module "promtail" {
-##  source           = "../modules/helm_releases"
-##  name             = "promtail"
-##  chart            = "promtail"
-##  chart_version    = "6.15.5"
-##  create_namespace = false
-##  namespace        = "monitoring"
-##  repository       = "https://grafana.github.io/helm-charts"
-##  values-yaml      = tolist([jsonencode(yamldecode(file("${path.module}/helm-values/promtail.yaml")))])
-##}
-##
-### deploy grafana
-##module "grafana" {
-##  source           = "../modules/helm_releases"
-##  name             = "grafana"
-##  chart            = "grafana"
-##  chart_version    = "7.3.9"
-##  create_namespace = false
-##  namespace        = "monitoring"
-##  repository       = "https://grafana.github.io/helm-charts"
-##  values-yaml      = tolist([jsonencode(yamldecode(file("${path.module}/helm-values/grafana.yaml")))])
 ##}
