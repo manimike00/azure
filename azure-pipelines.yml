@@ -23,23 +23,21 @@ trigger:
 - main
 
 pool:
-  name: fizota-k8s-agents
+  name: Azure Pipelines
   #vmImage: ubuntu-latest
 
 steps:
 - script: |
     echo "The devops Test - Mani - $(date)" > index.html
-    mkdir build
-    mv index.html build
   displayName: 'install and build'
 
-- task: CopyFiles@2
-  displayName: 'Copy Files to: $(build.artifactstagingdirectory)'
-  inputs:
-    SourceFolder: build/
-    TargetFolder: '$(build.artifactstagingdirectory)'   
+# - task: CopyFiles@2
+#   displayName: 'Copy Files to: $(build.artifactstagingdirectory)'
+#   inputs:
+#     SourceFolder: build/
+#     TargetFolder: '$(build.artifactstagingdirectory)'   
 
-- task: PublishBuildArtifacts@1    
-  displayName: 'Publish Artifact: drop'
-  inputs:
-    PathtoPublish: '$(build.artifactstagingdirectory)'
+# - task: PublishBuildArtifacts@1    
+#   displayName: 'Publish Artifact: drop'
+#   inputs:
+#     PathtoPublish: '$(build.artifactstagingdirectory)'
