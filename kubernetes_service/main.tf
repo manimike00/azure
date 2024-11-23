@@ -199,12 +199,12 @@ module "bastion_vm_role" {
   scope                = module.rg.resource-id
 }
 
-#module "bastion_vm_role_aks" {
-#  source               = "../modules/role_assignment"
-#  principal_id         = module.bastion_uid.uai_principal_id
-#  role_definition_name = "Azure Kubernetes Service RBAC Cluster Admin"
-#  scope                = module.kubernetes_service.aks-id
-#}
+module "bastion_vm_role_aks" {
+ source               = "../modules/role_assignment"
+ principal_id         = module.bastion_uid.uai_principal_id
+ role_definition_name = "Azure Kubernetes Service RBAC Cluster Admin"
+ scope                = module.kubernetes_service.aks-id
+}
 
 module "bastion" {
   source                = "../modules/virtual_machine"
@@ -222,64 +222,64 @@ module "bastion" {
   custom_data           = file("${path.module}/customdata/data.sh")
 }
 
-### create subnets nodepool
-##module "nodepool_subnets" {
-##  source               = "../modules/subnets"
-##  name                 = "${var.env}-${var.name}-${var.project}"
-##  address_prefixes     = var.address_prefixes_monitoring_np
-##  resource_group_name  = module.resouce_group.resource-grp
-##  service_endpoints    = null
-##  virtual_network_name = module.virtual_network.vnet
-##}
-#
-### create user node pool
-##module "monitoring" {
-##  source                = "../modules/node_pool"
-##  name                  = "monitoring"
-##  env                   = var.env
-##  environment           = var.env
-##  location              = var.location
-##  project               = var.project
-##  kubernetes_cluster_id = module.kubernetes_service.aks-id
-##  min_count             = 1
-##  max_count             = 3
-##  node_count            = 1
-##  use_spot              = false
-##  vm_size               = "Standard_B2s"
-##  vnet_subnet_id        = module.nodepool_subnets.subnets-id
-##}
-#
-### create stoage account
-##module "storage_account" {
-##  source                   = "../modules/storage_account"
-##  name                     = "${var.env}${var.name}${var.project}backup"
-##  env                      = var.env
-##  location                 = var.location
-##  project                  = var.project
-##  resource_group_name      = module.resouce_group.resource-grp
-##  account_tier             = "Standard"
-##  account_replication_type = "GRS"
-##}
-#
-### create storage container
-##module "storage_container" {
-##  source                = "../modules/storage_container"
-##  name                  = "velero"
-##  storage_account_name  = module.storage_account.storage_account
-##  container_access_type = "private"
-##}
-#
-##locals {
-##  azure_creds = <<EOF
-##AZURE_SUBSCRIPTION_ID=${var.subscription_id}
-##AZURE_TENANT_ID=${var.tenant_id}
-##AZURE_CLIENT_ID=${var.client_id}
-##AZURE_CLIENT_SECRET=${var.client_secret}
-##AZURE_RESOURCE_GROUP=${module.resouce_group.resource-grp}
-##AZURE_CLOUD_NAME=AzurePublicCloud
-##EOF
-##}
-#
+# # create subnets nodepool
+# module "nodepool_subnets" {
+#  source               = "../modules/subnets"
+#  name                 = "${var.env}-${var.name}-${var.project}"
+#  address_prefixes     = var.address_prefixes_monitoring_np
+#  resource_group_name  = module.resouce_group.resource-grp
+#  service_endpoints    = null
+#  virtual_network_name = module.virtual_network.vnet
+# }
+
+# # create user node pool
+# module "monitoring" {
+#  source                = "../modules/node_pool"
+#  name                  = "monitoring"
+#  env                   = var.env
+#  environment           = var.env
+#  location              = var.location
+#  project               = var.project
+#  kubernetes_cluster_id = module.kubernetes_service.aks-id
+#  min_count             = 1
+#  max_count             = 3
+#  node_count            = 1
+#  use_spot              = false
+#  vm_size               = "Standard_B2s"
+#  vnet_subnet_id        = module.nodepool_subnets.subnets-id
+# }
+
+# # create stoage account
+# module "storage_account" {
+#  source                   = "../modules/storage_account"
+#  name                     = "${var.env}${var.name}${var.project}backup"
+#  env                      = var.env
+#  location                 = var.location
+#  project                  = var.project
+#  resource_group_name      = module.resouce_group.resource-grp
+#  account_tier             = "Standard"
+#  account_replication_type = "GRS"
+# }
+
+# ### create storage container
+# module "storage_container" {
+#  source                = "../modules/storage_container"
+#  name                  = "velero"
+#  storage_account_name  = module.storage_account.storage_account
+#  container_access_type = "private"
+# }
+
+#locals {
+#  azure_creds = <<EOF
+#AZURE_SUBSCRIPTION_ID=${var.subscription_id}
+#AZURE_TENANT_ID=${var.tenant_id}
+#AZURE_CLIENT_ID=${var.client_id}
+#AZURE_CLIENT_SECRET=${var.client_secret}
+#AZURE_RESOURCE_GROUP=${module.resouce_group.resource-grp}
+#AZURE_CLOUD_NAME=AzurePublicCloud
+#EOF
+#}
+
 ## deploy velero
 ##module "velero" {
 ##  source           = "../modules/helm_releases"
