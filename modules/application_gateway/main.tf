@@ -61,7 +61,7 @@ resource "azurerm_application_gateway" "network" {
     http_listener_name         = local.listener_name
     backend_address_pool_name  = local.backend_address_pool_name
     backend_http_settings_name = local.http_setting_name
-    #    priority                   = 1
+    priority                   = 1
   }
 
   firewall_policy_id = var.firewall_policy_id
@@ -74,7 +74,7 @@ resource "azurerm_application_gateway" "network" {
   }
 
   lifecycle {
-    ignore_changes = [backend_address_pool, backend_http_settings, http_listener, request_routing_rule, probe, tags]
+    ignore_changes = [backend_address_pool, backend_http_settings, http_listener, request_routing_rule, probe, tags, frontend_port, ssl_certificate, redirect_configuration]
   }
 
 }

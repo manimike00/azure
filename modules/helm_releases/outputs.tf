@@ -1,7 +1,4 @@
-output "helm_release_name" {
-  value = helm_release.chart.name
-}
-
-output "helm_release_id" {
-  value = helm_release.chart.id
+output "deployment" {
+  value       = var.app["deploy"] ? helm_release.this[0].metadata : []
+  description = "The state of the helm deployment"
 }

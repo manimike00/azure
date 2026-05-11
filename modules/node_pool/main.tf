@@ -25,6 +25,6 @@ resource "azurerm_kubernetes_cluster_node_pool" "nodepool" {
     environment = var.env
   }
   lifecycle {
-    ignore_changes = [node_taints, tags]
+    ignore_changes = [node_taints, tags,node_count]
   }
 }

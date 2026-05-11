@@ -32,6 +32,11 @@ resource "azurerm_linux_virtual_machine" "azure-vm" {
   #  ]
 
   network_interface_ids = var.network_interface_ids
+  identity {
+    type = var.identity
+    identity_ids = var.identity_ids
+  }
+
 
   admin_ssh_key {
     username   = var.admin_username
@@ -45,8 +50,8 @@ resource "azurerm_linux_virtual_machine" "azure-vm" {
 
   source_image_reference {
     publisher = "Canonical"
-    offer     = "0001-com-ubuntu-server-focal"
-    sku       = "20_04-lts"
+    offer     = "0001-com-ubuntu-server-jammy"
+    sku       = "22_04-lts"
     version   = "latest"
   }
 
