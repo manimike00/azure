@@ -145,7 +145,7 @@ resource "random_password" "password" {
 #    { name = "prometheus.prometheusSpec.additionalScrapeConfigs[0].job_name", value = "opencost", type = "string"},
 #    { name = "prometheus.prometheusSpec.additionalScrapeConfigs[0].scrape_interval", value = "1m", type = "string"},
 #    { name = "prometheus.prometheusSpec.additionalScrapeConfigs[0].scrape_timeout", value = "10s", type = "string"},
-#    { name = "prometheus.prometheusSpec.additionalScrapeConfigs[0].metrics_path", value = "/metrics", type = "string"},
+#    { name = "prometheus.prometheusSpec.additionalScrapeConfigs[0].metrics_path", value = "/metrics  ", type = "string"},
 #    { name = "prometheus.prometheusSpec.additionalScrapeConfigs[0].scheme", value = "http", type = "string"},
 #    { name = "prometheus.prometheusSpec.additionalScrapeConfigs[0].static_configs[0].targets[0]", value = "opencost.opencost.svc.cluster.local:9003", type = "string"},
 #    # scrape configs for velero
@@ -158,7 +158,7 @@ resource "random_password" "password" {
 #    # grafana admin password
 #    { name = "grafana.adminPassword", value = random_password.password.result, type = "string" },
 #    # grafana dashboard configs
-#    { name = "grafana.dashboardproviders.yaml.apiVersion", value = "", type = ""}
+#    { name = "grafana.dashboardproviders\.yaml.", value = "", type = ""}
 #  ]
 #}
 
