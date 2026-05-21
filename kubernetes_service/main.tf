@@ -23,7 +23,7 @@ module "vnet" {
   location            = var.location
   project             = var.project
   resource_group_name = module.rg.resource-grp
-  address_space       = "10.100.0.0/16"
+  address_space       = var.address_space
 }
 
 module "vnet_private_dns_link" {
@@ -66,7 +66,7 @@ module "uid_aks_vnet_ra" {
 module "default_np_subnet" {
   source               = "../modules/subnets"
   name                 = "${var.name}-system-np"
-  address_prefixes     = "10.100.0.0/20"
+  address_prefixes     = var.address_prefixes_default_np
   resource_group_name  = module.rg.resource-grp
   service_endpoints    = null
   virtual_network_name = module.vnet.vnet
@@ -82,7 +82,7 @@ module "kubernetes_service" {
   location                            = var.location
   default-np-size                     = "Standard_B2ms"
   local_account_disabled              = false
-  kubernetes_version                  = "1.29"
+  kubernetes_version                  = var.kubernetes_version
   resource-grp                        = module.rg.resource-grp
   vnet_subnet_id                      = module.default_np_subnet.subnets-id
   private_cluster_enabled             = true
@@ -108,7 +108,7 @@ module "kubernetes_service" {
 module "public_subnet" {
   source               = "../modules/subnets"
   name                 = "${var.name}-${var.project}-public-subnet"
-  address_prefixes     = "10.100.49.0/24"
+  address_prefixes     = var.address_prefixes_public_subnet
   resource_group_name  = module.rg.resource-grp
   virtual_network_name = module.vnet.vnet
 }
@@ -200,10 +200,16 @@ module "bastion_vm_role" {
 }
 
 module "bastion_vm_role_aks" {
- source               = "../modules/role_assignment"
- principal_id         = module.bastion_uid.uai_principal_id
- role_definition_name = "Azure Kubernetes Service RBAC Cluster Admin"
- scope                = module.kubernetes_service.aks-id
+  source               = "../modules/role_assignment"
+  principal_id         = module.bastion_uid.uai_principal_id
+  role_definition_name = "Azure Kubernetes Service RBAC Cluster Admin"
+  scope                = module.kubernetes_service.aks-id
+}
+
+module "bastion_ssh_key" {
+  source    = "../modules/tls_private_key"
+  algorithm = "RSA"
+  rsa_bits  = 4096
 }
 
 module "bastion" {
@@ -214,7 +220,7 @@ module "bastion" {
   location              = var.location
   resource_group_name   = module.rg.resource-grp
   admin_username        = "basadmin"
-  public_key            = ""
+  public_key            = module.bastion_ssh_key.public_key_openssh
   network_interface_ids = [module.nic.nic_id]
   size                  = "Standard_B1ms"
   identity              = "UserAssigned"
@@ -249,25 +255,23 @@ module "bastion" {
 #  vnet_subnet_id        = module.nodepool_subnets.subnets-id
 # }
 
-# # create stoage account
-# module "storage_account" {
-#  source                   = "../modules/storage_account"
-#  name                     = "${var.env}${var.name}${var.project}backup"
-#  env                      = var.env
-#  location                 = var.location
-#  project                  = var.project
-#  resource_group_name      = module.resouce_group.resource-grp
-#  account_tier             = "Standard"
-#  account_replication_type = "GRS"
-# }
+module "storage_account" {
+  source                   = "../modules/storage_account"
+  name                     = "${var.env}${var.name}${var.project}backup"
+  env                      = var.env
+  location                 = var.location
+  project                  = var.project
+  resource_group_name      = module.rg.resource-grp
+  account_tier             = "Standard"
+  account_replication_type = "GRS"
+}
 
-# ### create storage container
-# module "storage_container" {
-#  source                = "../modules/storage_container"
-#  name                  = "velero"
-#  storage_account_name  = module.storage_account.storage_account
-#  container_access_type = "private"
-# }
+module "storage_container" {
+  source                = "../modules/storage_container"
+  name                  = "velero"
+  storage_account_id    = module.storage_account.storage_account_id
+  container_access_type = "private"
+}
 
 #locals {
 #  azure_creds = <<EOF
@@ -473,21 +477,24 @@ AZURE_SUBSCRIPTION_ID=${var.subscription_id}
 AZURE_TENANT_ID=${var.tenant_id}
 AZURE_CLIENT_ID=${var.client_id}
 AZURE_CLIENT_SECRET=${var.client_secret}
-AZURE_RESOURCE_GROUP=${module.resouce_group.resource-grp}
+AZURE_RESOURCE_GROUP=${module.rg.resource-grp}
 AZURE_CLOUD_NAME=AzurePublicCloud
 EOF
 }
 
 # deploy velero
 module "velero" {
-  source           = "../modules/helm_releases"
-  name             = "velero"
-  chart            = "velero"
-  create_namespace = true
-  namespace        = "velero"
-  chart_version    = "3.1.3"
-  repository       = "https://vmware-tanzu.github.io/helm-charts"
-  values = [
+  source     = "../modules/helm_releases"
+  namespace  = "velero"
+  repository = "https://vmware-tanzu.github.io/helm-charts"
+  app = {
+    deploy           = true
+    name             = "velero"
+    chart            = "velero"
+    create_namespace = true
+    version          = "3.1.3"
+  }
+  set = [
     { name = "initContainers[0].name", value = "velero-plugin-for-azure", type = "string" },
     { name = "initContainers[0].image", value = "velero/velero-plugin-for-microsoft-azure:v1.5.0", type = "string" },
     { name = "initContainers[0].imagePullPolicy", value = "IfNotPresent", type = "string" },
@@ -496,7 +503,7 @@ module "velero" {
     { name = "credentials.secretContents.cloud", value = local.azure_creds, type = "string" },
     { name = "configuration.provider", value = "azure", type = "string" },
     { name = "configuration.backupStorageLocation.bucket", value = module.storage_container.storage_container, type = "string" },
-    { name = "configuration.backupStorageLocation.config.resourceGroup", value = module.resouce_group.resource-grp, type = "string" },
+    { name = "configuration.backupStorageLocation.config.resourceGroup", value = module.rg.resource-grp, type = "string" },
     { name = "configuration.backupStorageLocation.config.storageAccount", value = module.storage_account.storage_account, type = "string" },
     { name = "configuration.backupStorageLocation.config.subscriptionId", value = var.subscription_id, type = "string" },
     { name = "configuration.backupStorageLocation.default", value = "true", type = "string" }

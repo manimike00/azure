@@ -9,8 +9,8 @@ resource "azurerm_postgresql_flexible_server" "postgresql_flexible_server" {
   administrator_password = var.administrator_password
   zone                   = var.zone
   storage_mb             = var.storage_mb
-#  storage_tier           = var.storage_tier
-  sku_name               = var.sku_name
+  #  storage_tier           = var.storage_tier
+  sku_name = var.sku_name
   tags = {
     name        = var.name
     project     = var.project

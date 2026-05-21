@@ -48,13 +48,13 @@ resource "azurerm_kubernetes_cluster" "aks" {
     vm_size = var.default-np-size
     #    orchestrator_version = data.azurerm_kubernetes_service_versions.current.latest_version
     #    availability_zones   = [1, 2, 3]
-    enable_auto_scaling = var.enable_auto_scaling
-    max_count           = var.max_count
-    min_count           = var.min_count
-    node_count          = var.node_count
-    os_disk_size_gb     = 30
-    type                = "VirtualMachineScaleSets"
-    vnet_subnet_id      = var.vnet_subnet_id
+    auto_scaling_enabled = var.enable_auto_scaling
+    max_count            = var.max_count
+    min_count            = var.min_count
+    node_count           = var.node_count
+    os_disk_size_gb      = 30
+    type                 = "VirtualMachineScaleSets"
+    vnet_subnet_id       = var.vnet_subnet_id
     upgrade_settings {
       max_surge = "10%"
     }

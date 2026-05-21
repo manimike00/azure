@@ -35,6 +35,7 @@ module "postgresql_subnet" {
 module "private_dns_zone" {
   source              = "../modules/private_dns_zone"
   name                = "example.postgres.database.azure.com"
+  dns_name            = "example.postgres.database.azure.com"
   project             = var.project
   location            = var.location
   env                 = var.env
@@ -44,7 +45,6 @@ module "private_dns_zone" {
 # private dns zone vnet link
 module "private_dns_zone_virtual_network_link" {
   source                = "../modules/private_dns_zone_vnet_link"
-  domain                = "exampleVnetZone.com"
   name                  = "${var.env}-${var.name}-${var.project}"
   project               = var.project
   location              = var.location
@@ -69,6 +69,6 @@ module "postgresql_flexible_server" {
   administrator_password = "H@Sh1CoR3!"
   zone                   = "1"
   storage_mb             = 32768
-#  storage_tier           = "P30"
-  sku_name               = "GP_Standard_D4s_v3"
+  #  storage_tier           = "P30"
+  sku_name = "GP_Standard_D4s_v3"
 }
