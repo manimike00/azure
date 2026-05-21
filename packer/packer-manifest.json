@@ -1,0 +1,14 @@
+{
+  "builds": [
+    {
+      "name": "ubuntu_2204",
+      "builder_type": "azure-arm",
+      "build_time": 1778757617,
+      "files": null,
+      "artifact_id": "/subscriptions/15e39dd4-0677-4bcd-bb45-d2deb5edda40/resourceGroups/rg-packer-images/providers/Microsoft.Compute/images/ubuntu-22-04-base-20260514-111429",
+      "packer_run_uuid": "bde6b5b4-7a67-25d3-2b14-12bd8fee9aee",
+      "custom_data": null
+    }
+  ],
+  "last_run_uuid": "bde6b5b4-7a67-25d3-2b14-12bd8fee9aee"
+}

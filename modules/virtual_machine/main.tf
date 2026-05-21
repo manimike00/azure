@@ -33,7 +33,7 @@ resource "azurerm_linux_virtual_machine" "azure-vm" {
 
   network_interface_ids = var.network_interface_ids
   identity {
-    type = var.identity
+    type         = var.identity
     identity_ids = var.identity_ids
   }
 

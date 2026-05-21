@@ -4,17 +4,16 @@ resource "azurerm_monitor_diagnostic_setting" "monitor_diagnostic_setting" {
   storage_account_id = var.storage_account_id
   enabled_log {
     category_group = "allLogs"
-#    retention_policy {
-#      enabled = true
-#      days = 3
-#    }
+    #    retention_policy {
+    #      enabled = true
+    #      days = 3
+    #    }
   }
-  metric {
+  enabled_metric {
     category = "AllMetrics"
-#    retention_policy {
-#      enabled = true
-#      days = 3
-#    }
-    enabled = true
+    #    retention_policy {
+    #      enabled = true
+    #      days = 3
+    #    }
   }
 }

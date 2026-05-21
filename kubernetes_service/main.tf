@@ -23,7 +23,7 @@ module "vnet" {
   location            = var.location
   project             = var.project
   resource_group_name = module.rg.resource-grp
-  address_space       = "10.100.0.0/16"
+  address_space       = var.address_space
 }
 
 module "vnet_private_dns_link" {
@@ -66,7 +66,7 @@ module "uid_aks_vnet_ra" {
 module "default_np_subnet" {
   source               = "../modules/subnets"
   name                 = "${var.name}-system-np"
-  address_prefixes     = "10.100.0.0/20"
+  address_prefixes     = var.address_prefixes_default_np
   resource_group_name  = module.rg.resource-grp
   service_endpoints    = null
   virtual_network_name = module.vnet.vnet
@@ -82,7 +82,7 @@ module "kubernetes_service" {
   location                            = var.location
   default-np-size                     = "Standard_B2ms"
   local_account_disabled              = false
-  kubernetes_version                  = "1.29"
+  kubernetes_version                  = var.kubernetes_version
   resource-grp                        = module.rg.resource-grp
   vnet_subnet_id                      = module.default_np_subnet.subnets-id
   private_cluster_enabled             = true
@@ -108,7 +108,7 @@ module "kubernetes_service" {
 module "public_subnet" {
   source               = "../modules/subnets"
   name                 = "${var.name}-${var.project}-public-subnet"
-  address_prefixes     = "10.100.49.0/24"
+  address_prefixes     = var.address_prefixes_public_subnet
   resource_group_name  = module.rg.resource-grp
   virtual_network_name = module.vnet.vnet
 }
@@ -200,10 +200,16 @@ module "bastion_vm_role" {
 }
 
 module "bastion_vm_role_aks" {
- source               = "../modules/role_assignment"
- principal_id         = module.bastion_uid.uai_principal_id
- role_definition_name = "Azure Kubernetes Service RBAC Cluster Admin"
- scope                = module.kubernetes_service.aks-id
+  source               = "../modules/role_assignment"
+  principal_id         = module.bastion_uid.uai_principal_id
+  role_definition_name = "Azure Kubernetes Service RBAC Cluster Admin"
+  scope                = module.kubernetes_service.aks-id
+}
+
+module "bastion_ssh_key" {
+  source    = "../modules/tls_private_key"
+  algorithm = "RSA"
+  rsa_bits  = 4096
 }
 
 module "bastion" {
@@ -214,7 +220,7 @@ module "bastion" {
   location              = var.location
   resource_group_name   = module.rg.resource-grp
   admin_username        = "basadmin"
-  public_key            = ""
+  public_key            = module.bastion_ssh_key.public_key_openssh
   network_interface_ids = [module.nic.nic_id]
   size                  = "Standard_B1ms"
   identity              = "UserAssigned"
@@ -249,25 +255,23 @@ module "bastion" {
 #  vnet_subnet_id        = module.nodepool_subnets.subnets-id
 # }
 
-# # create stoage account
-# module "storage_account" {
-#  source                   = "../modules/storage_account"
-#  name                     = "${var.env}${var.name}${var.project}backup"
-#  env                      = var.env
-#  location                 = var.location
-#  project                  = var.project
-#  resource_group_name      = module.resouce_group.resource-grp
-#  account_tier             = "Standard"
-#  account_replication_type = "GRS"
-# }
+module "storage_account" {
+  source                   = "../modules/storage_account"
+  name                     = "${var.env}${var.name}${var.project}backup"
+  env                      = var.env
+  location                 = var.location
+  project                  = var.project
+  resource_group_name      = module.rg.resource-grp
+  account_tier             = "Standard"
+  account_replication_type = "GRS"
+}
 
-# ### create storage container
-# module "storage_container" {
-#  source                = "../modules/storage_container"
-#  name                  = "velero"
-#  storage_account_name  = module.storage_account.storage_account
-#  container_access_type = "private"
-# }
+module "storage_container" {
+  source                = "../modules/storage_container"
+  name                  = "velero"
+  storage_account_id    = module.storage_account.storage_account_id
+  container_access_type = "private"
+}
 
 #locals {
 #  azure_creds = <<EOF
@@ -468,105 +472,95 @@ module "bastion" {
 #}
 
 locals {
-  kp_roles = [
-    "Virtual Machine Contributor",
-    "Network Contributor",
-    "Managed Identity Operator"
+  azure_creds = <<EOF
+AZURE_SUBSCRIPTION_ID=${var.subscription_id}
+AZURE_TENANT_ID=${var.tenant_id}
+AZURE_CLIENT_ID=${var.client_id}
+AZURE_CLIENT_SECRET=${var.client_secret}
+AZURE_RESOURCE_GROUP=${module.rg.resource-grp}
+AZURE_CLOUD_NAME=AzurePublicCloud
+EOF
+}
+
+# deploy velero
+module "velero" {
+  source     = "../modules/helm_releases"
+  namespace  = "velero"
+  repository = "https://vmware-tanzu.github.io/helm-charts"
+  app = {
+    deploy           = true
+    name             = "velero"
+    chart            = "velero"
+    create_namespace = true
+    version          = "3.1.3"
+  }
+  set = [
+    { name = "initContainers[0].name", value = "velero-plugin-for-azure", type = "string" },
+    { name = "initContainers[0].image", value = "velero/velero-plugin-for-microsoft-azure:v1.5.0", type = "string" },
+    { name = "initContainers[0].imagePullPolicy", value = "IfNotPresent", type = "string" },
+    { name = "initContainers[0].volumeMounts[0].mountPath", value = "/target", type = "string" },
+    { name = "initContainers[0].volumeMounts[0].name", value = "plugins", type = "string" },
+    { name = "credentials.secretContents.cloud", value = local.azure_creds, type = "string" },
+    { name = "configuration.provider", value = "azure", type = "string" },
+    { name = "configuration.backupStorageLocation.bucket", value = module.storage_container.storage_container, type = "string" },
+    { name = "configuration.backupStorageLocation.config.resourceGroup", value = module.rg.resource-grp, type = "string" },
+    { name = "configuration.backupStorageLocation.config.storageAccount", value = module.storage_account.storage_account, type = "string" },
+    { name = "configuration.backupStorageLocation.config.subscriptionId", value = var.subscription_id, type = "string" },
+    { name = "configuration.backupStorageLocation.default", value = "true", type = "string" }
   ]
 }
 
-#module "kp_uid_roles" {
-#  count = length(local.kp_roles)
-#  source               = "../modules/role_assignment"
-#  principal_id         = module.appgw_uid.uai_principal_id
-#  role_definition_name = local.kp_roles[count.index]
-#  scope                = azurerm_kubernetes_cluster.example.node_resource_group_id
+# random password
+resource "random_password" "password" {
+  length           = 16
+  special          = true
+  override_special = "!#$%&*()-_=+[]{}<>:?"
+}
+
+# deploy kube-prometheus-stack
+#module "kube-prometheus-stack" {
+#  source           = "../modules/helm_releases"
+#  name             = "kube-prometheus-stack"
+#  chart            = "kube-prometheus-stack"
+#  chart_version    = "45.8.1"
+#  create_namespace = true
+#  namespace        = "monitoring"
+#  repository       = "https://prometheus-community.github.io/helm-charts"
+#  values = [
+#    # scrape configs for opencost
+#    { name = "prometheus.prometheusSpec.additionalScrapeConfigs[0].job_name", value = "opencost", type = "string"},
+#    { name = "prometheus.prometheusSpec.additionalScrapeConfigs[0].scrape_interval", value = "1m", type = "string"},
+#    { name = "prometheus.prometheusSpec.additionalScrapeConfigs[0].scrape_timeout", value = "10s", type = "string"},
+#    { name = "prometheus.prometheusSpec.additionalScrapeConfigs[0].metrics_path", value = "/metrics", type = "string"},
+#    { name = "prometheus.prometheusSpec.additionalScrapeConfigs[0].scheme", value = "http", type = "string"},
+#    { name = "prometheus.prometheusSpec.additionalScrapeConfigs[0].static_configs[0].targets[0]", value = "opencost.opencost.svc.cluster.local:9003", type = "string"},
+#    # scrape configs for velero
+#    { name = "prometheus.prometheusSpec.additionalScrapeConfigs[1].job_name", value = "velero", type = "string"},
+#    { name = "prometheus.prometheusSpec.additionalScrapeConfigs[1].scrape_interval", value = "30s", type = "string"},
+#    { name = "prometheus.prometheusSpec.additionalScrapeConfigs[1].scrape_timeout", value = "10s", type = "string"},
+#    { name = "prometheus.prometheusSpec.additionalScrapeConfigs[1].metrics_path", value = "/metrics", type = "string"},
+#    { name = "prometheus.prometheusSpec.additionalScrapeConfigs[1].scheme", value = "http", type = "string"},
+#    { name = "prometheus.prometheusSpec.additionalScrapeConfigs[1].static_configs[0].targets[0]", value = "velero.velero.svc.cluster.local:8085", type = "string"},
+#    # grafana admin password
+#    { name = "grafana.adminPassword", value = random_password.password.result, type = "string" },
+#    # grafana dashboard configs
+#    { name = "grafana.dashboardproviders.yaml.apiVersion", value = "", type = ""}
+#  ]
 #}
 
-#module "kp_vnet" {
-#  source               = "../modules/role_assignment"
-#  principal_id         = module.karpentermsi_uid.uai_principal_id
-#  role_definition_name = "Virtual Machine Contributor"
-#  scope                = azurerm_kubernetes_cluster.example.node_resource_group_id
-#}
-#
-#module "kp_vnet_id" {
-#  source               = "../modules/role_assignment"
-#  principal_id         = module.karpentermsi_uid.uai_principal_id
-#  role_definition_name = "Network Contributor"
-#  scope                = azurerm_virtual_network.example.id
-#}
-#
-#module "kp_rg" {
-#  source               = "../modules/role_assignment"
-#  principal_id         = module.karpentermsi_uid.uai_principal_id
-#  role_definition_name = "Contributor"
-#  scope                = azurerm_kubernetes_cluster.example.node_resource_group_id
-#}
 
-##locals {
-##  roles = ["Virtual Machine Contributor","Network Contributor"]
-##}
-##
-##module "karpenter-ra-contributor" {
-##  count                = length(local.roles)
-##  source               = "../modules/role_assignment"
-##  principal_id         = module.karpenter_uid.uai_principal_id
-##  role_definition_name = local.roles[count.index]
-##  scope                = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${module.kubernetes_service.node_resource_group}"
-##}
-#
-### deploy agic - agic-sa-ingress-azure
-##module "agic" {
-##  source           = "../modules/helm_releases"
-##  name             = "agic"
-##  chart            = "ingress-azure"
-##  chart_version    = "1.7.2"
-##  create_namespace = false
-##  namespace        = "kube-system"
-##  repository       = "https://appgwingress.blob.core.windows.net/ingress-azure-helm-package"
-##  values = [
-##    { name = "appgw.environment", value = "AZUREPUBLICCLOUD", type = "string" },
-##    { name = "appgw.subscriptionId", value = data.azurerm_subscription.current.id, type = "string" },
-##    { name = "appgw.resourceGroup", value = module.resouce_group.resource-grp, type = "string" },
-##    { name = "appgw.name", value = module.appgw.appgw, type = "string" },
-##    { name = "armAuth.type", value = "workloadIdentity", type = "string" },
-##    { name = "armAuth.identityClientID", value = module.uid.uai_client_id, type = "string" },
-##    { name = "rbac.enabled", value = "true", type = "string"}
-##  ]
-##}
-#
-#
-### user identity
-##module "blob_driver_uid" {
-##  source              = "../modules/identity"
-##  name                = "${var.env}-${var.name}-${var.project}-blob-driver"
-##  env                 = var.env
-##  location            = var.location
-##  project             = var.project
-##  resource_group_name = module.resouce_group.resource-grp
-##}
-##
-##
-### federated credential
-##module "blob_driver_fc" {
-##  source              = "../modules/federated_identity_credential"
-##  name                = "${var.env}-${var.name}-${var.project}-blob-driver"
-##  resource_group_name = module.resouce_group.resource-grp
-##  uid                 = module.blob_driver_uid.uai_id
-##  audience            = "api://AzureADTokenExchange"
-##  issuer              = "https://eastus.oic.prod-aks.azure.com/ae154255-ea98-40bb-99ca-a8464d43c627/c899988e-2485-4ea1-b32a-1e940296b8f8/"
-##  subject             = "system:serviceaccount:kube-system:core-k8s-tools-sa-blob-csi-driver"
-##}
-#
-### deploy loki-distributed - loki-distributed
-##module "loki-distributed" {
-##  source           = "../modules/helm_releases"
-##  name             = "loki-distributed"
-##  chart            = "loki-distributed"
-##  chart_version    = "0.79.0"
-##  create_namespace = false
-##  namespace        = "monitoring"
-##  repository       = "https://grafana.github.io/helm-charts"
-##  values-yaml      = tolist([jsonencode(yamldecode(file("${path.module}/helm-values/loki-distributed.yaml")))])
-##}
+# deploy open-cost
+#module "open-cost" {
+#  source           = "../modules/helm_releases"
+#  name             = "opencost"
+#  chart            = "opencost"
+#  chart_version    = "1.10.0"
+#  create_namespace = true
+#  namespace        = "opencost"
+#  repository       = "https://opencost.github.io/opencost-helm-chart"
+#  values = [
+#    { name = "opencost.ui.enabled", value = "true", type = "string" },
+#    { name = "opencost.prometheus.internal.serviceName", value = "kube-prometheus-stack-prometheus", type = "string" },
+#    { name = "opencost.prometheus.internal.namespaceName", value = "monitoring", type = "string" }
+#  ]
+#}

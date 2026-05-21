@@ -30,24 +30,6 @@ resource "helm_release" "this" {
   replace                    = lookup(var.app, "replace", false)
   timeout                    = lookup(var.app, "timeout", 300)
   values                     = var.values
-
-  dynamic "set" {
-    iterator = item
-    for_each = var.set == null ? [] : var.set
-
-    content {
-      name  = item.value.name
-      value = item.value.value
-    }
-  }
-
-  dynamic "set_sensitive" {
-    iterator = item
-    for_each = var.set_sensitive == null ? [] : var.set_sensitive
-
-    content {
-      name  = item.value.path
-      value = item.value.value
-    }
-  }
+  set                        = var.set
+  set_sensitive              = var.set_sensitive
 }

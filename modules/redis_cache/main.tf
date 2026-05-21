@@ -7,12 +7,12 @@ resource "azurerm_redis_cache" "redis" {
   capacity                      = var.redis_cache_capacity
   family                        = var.redis_cache_family
   sku_name                      = var.redis_cache_sku
-  enable_non_ssl_port           = false
+  non_ssl_port_enabled          = false
   minimum_tls_version           = "1.2"
   public_network_access_enabled = var.redis_public_network_access_enabled
   subnet_id                     = var.subnet_id
   redis_configuration {
-    enable_authentication = var.redis_enable_authentication
+    authentication_enabled = var.redis_enable_authentication
   }
   lifecycle {
     ignore_changes = [
