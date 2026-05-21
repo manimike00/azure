@@ -4,10 +4,10 @@
 #
 # Never commit real secrets — use env vars (PKR_VAR_*) or a secrets manager in CI/CD.
 
-subscription_id = "15e39dd4-0677-4bcd-bb45-d2deb5edda40"
-tenant_id       = "ae154255-ea98-40bb-99ca-a8464d43c627"
-client_id       = "1b20ece8-29b9-4b2b-8385-2bac324ee835"
-client_secret   = "Us48Q~Bi22UZrjLyMOY8KssqJBllPyqZh23MAaKc"
+subscription_id = ""
+tenant_id       = ""
+client_id       = ""
+client_secret   = ""
 
 location                     = "centralindia"
 managed_image_name           = "ubuntu-22-04-base"
